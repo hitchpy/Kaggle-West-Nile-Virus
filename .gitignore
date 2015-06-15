@@ -1,0 +1,8 @@
+.Rhistory
+.DS_Store
+*.csv
+input/
+*.log
+*.gz
+*.aux
+*.tex
