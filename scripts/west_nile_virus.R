@@ -52,17 +52,6 @@ temp$StnPressure = as.numeric(as.character(temp$StnPressure))
 temp$StnPressure[is.na(temp$StnPressure)] = 0
 temp$AvgSpeed = as.numeric(as.character(temp$AvgSpeed))
 temp$AvgSpeed[is.na(temp$AvgSpeed)] = 0
-
-temp$SeaLevel = as.numeric(as.character(temp$SeaLevel))
-impute.train = temp[!is.na(temp$SeaLevel), c( 'week', 'Longitude', 'Latitude','year')]
-impute.test = temp[is.na(temp$SeaLevel) , c('week', 'Longitude', 'Latitude', 'year')]
-impute.y = temp[!is.na(temp$SeaLevel) , 'SeaLevel']
-## Tune K
-knnmodel = knn.reg(train = impute.train, test = impute.test, y = impute.y, 
-                   k = 3)
-temp[!is.na(temp$SeaLevel) , 'SeaLevel'] = knnmodel$pred
-
-
 #train = temp[, c('week', 'month','Species' ,'Latitude',
 #                 'Longitude', 'Tmax', 'Tmin', 'DewPoint', 
 #                 'PrecipTotal' ,'StnPressure','AvgSpeed',
@@ -72,7 +61,7 @@ temp[!is.na(temp$SeaLevel) , 'SeaLevel'] = knnmodel$pred
 # train$Heat = NULL
 # train$Cool = NULL
 # train$SeaLevel = NULL
-train = temp
+
 y = as.factor(temp$WnvPresent)
 train.date = temp$Date
 ## Spraying correction 
@@ -91,7 +80,7 @@ train.date = temp$Date
 ###
 
 ### GAM model without using NumMosquitos
-gamcv = function(train, yr = 2007, td = train.date){
+gamcv = function(train, y){
   #Split data
   holdout = train[year(td) ==yr, ]
   holdout.y = y[year(td) ==yr]
@@ -99,9 +88,9 @@ gamcv = function(train, yr = 2007, td = train.date){
   train.y = y[year(td) != yr]
   w = ifelse(train.y == 1, 15, 1)
   d2 = cbind(train.cv, train.y)
-  fitted = mgcv::gam(train.y ~ year + Species  + ti(Latitude, Longitude, NumMosquitos) + s(PrecipTotal) + 
-                       StnPressure + ResultSpeed + s(ResultDir) + 
-                       Tmax + Tmin  + s(dayofyear) , data = d2,family = binomial(),
+  fitted = mgcv::gam(train.y ~ year + ti(Latitude, Longitude) + s(PrecipTotal) + 
+                       StnPressure + s(ResultSpeed) + s(ResultDir) + 
+                       s(Tmax) + s(Tmin) + s(NumMosquitos) + s(dayofyear) , data = d2,family = binomial(),
                      select = TRUE)
   
   impute.train = train.cv[, c( 'week', 'Longitude', 'Latitude','Species')]
